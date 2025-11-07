@@ -1,5 +1,15 @@
 // src/pages/Credentials.jsx
-import React, { useMemo, useState } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  listCredentials,
+  createCredential,
+  updateCredential,
+  deleteCredential,
+  listUpcomingRenewals,
+} from "@/lib/credentials";
+import { useLoading } from "@/components/LoadingProvider";
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,74 +75,46 @@ const badgeFor = (d) => {
 /* ---------------- page ---------------- */
 export default function CredentialsPage() {
   // seed (replace with API later)
-  const [rows, setRows] = useState([
-    {
-      id: "1",
-      client: "John Doe",
-      type: "Domain",
-      provider: "GoDaddy",
-      url: "https://account.godaddy.com",
-      login: "john@godaddy.com",
-      password: "john@123",
-      serviceName: "example.com",
-      expiry: "2025-12-31",
-      notes: "Auto-renew disabled",
-    },
-    {
-      id: "2",
-      client: "Jane Smith",
-      type: "Hosting",
-      provider: "AWS",
-      url: "https://console.aws.amazon.com",
-      login: "jane@aws.com",
-      password: "awsPASS!9",
-      serviceName: "EC2 Server",
-      expiry: "2026-01-15",
-      notes: "t3.micro; Ubuntu 22.04",
-    },
-    {
-      id: "3",
-      client: "ShopNow Inc",
-      type: "Domain",
-      provider: "Namecheap",
-      url: "https://ap.www.namecheap.com",
-      login: "admin@shopnow.com",
-      password: "secret$$",
-      serviceName: "shopnow.in",
-      expiry: "2025-11-29",
-      notes: "",
-    },
-    {
-      id: "4",
-      client: "TechSolutions",
-      type: "Hosting",
-      provider: "DigitalOcean",
-      url: "https://cloud.digitalocean.com",
-      login: "admin@techsoln.com",
-      password: "doStrongPwd1",
-      serviceName: "Droplet #42",
-      expiry: "2025-11-3",
-      notes: "Ubuntu 20.04 LTS",
-    },
-    {
-      id: "5",
-      client: "CreativeAgency",
-      type: "Domain",
-      provider: "Bluehost",
-      url: "https://my.bluehost.com",
-      login: "creative123@email.com",
-      password: "blueHost!@#",
-      serviceName: "creativeagency.com",
-      expiry: "2026-02-20",
-      notes: "Includes WHOIS privacy",
-    }
-  ]);
-
+  const [rows, setRows] = useState([]);
+  const [renewals, setRenewals] = useState([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("All");
   const [showPwd, setShowPwd] = useState(null); // id that is showing password
   const [editing, setEditing] = useState(null); // row being edited (or null)
   const [open, setOpen] = useState(false); // dialog
+  const { withLoader } = useLoading();
+
+  useEffect(() => {
+    withLoader(async () => {
+      const data = await listCredentials({});
+      setRows(
+        data.map((r) => ({
+          id: r.id,
+          client: r.client_name,
+          type: r.type, // "Domain" / "Hosting"
+          provider: r.provider,
+          url: r.portal_url,
+          login: r.login,
+          password: r.password ?? "", // (if you add this column later)
+          serviceName: r.service_name,
+          expiry: r.expiry,
+          notes: r.notes || "",
+        }))
+      );
+      setRenewals(await listUpcomingRenewals());
+    }).catch((e) => toast.error(e.message));
+  }, [withLoader]);
+
+  useEffect(() => {
+  const channel = supabase
+    .channel('rt-credentials')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
+      listExpenses().then(setRows); // your existing fetcher
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+}, []);
 
 
   const filtered = useMemo(() => {
@@ -158,22 +140,47 @@ export default function CredentialsPage() {
     }
   };
 
-  const onDelete = (id) => {
+  const onDelete = async (id) => {
     if (!confirm("Delete this credential?")) return;
+    await withLoader(() => deleteCredential(id));
     setRows((r) => r.filter((x) => x.id !== id));
     toast.success("Credential deleted");
   };
 
-  const onSave = (payload) => {
+  const toDb = (f) => ({
+    client_name: f.client,
+    type: f.type,
+    provider: f.provider,
+    portal_url: f.url,
+    login: f.login,
+    service_name: f.serviceName,
+    expiry: f.expiry,
+    notes: f.notes,
+  });
+  const fromDb = (r) => ({
+    id: r.id,
+    client: r.client_name,
+    type: r.type,
+    provider: r.provider,
+    url: r.portal_url,
+    login: r.login,
+    password: r.password ?? "",
+    serviceName: r.service_name,
+    expiry: r.expiry,
+    notes: r.notes || "",
+  });
+  const onSave = async (payload) => {
     if (editing) {
+      const updated = await withLoader(() =>
+        updateCredential(editing.id, toDb(payload))
+      );
       setRows((prev) =>
-        prev.map((r) =>
-          r.id === editing.id ? { ...payload, id: editing.id } : r
-        )
+        prev.map((r) => (r.id === editing.id ? fromDb(updated) : r))
       );
       toast.success("Credential updated");
     } else {
-      setRows((prev) => [{ ...payload, id: crypto.randomUUID() }, ...prev]);
+      const created = await withLoader(() => createCredential(toDb(payload)));
+      setRows((prev) => [fromDb(created), ...prev]);
       toast.success("Credential added");
     }
     setOpen(false);
@@ -200,9 +207,15 @@ export default function CredentialsPage() {
             className="shrink-0"
           >
             <TabsList>
-              <TabsTrigger className={"hover:text-yellow-300"} value="All">All</TabsTrigger>
-              <TabsTrigger className={"hover:text-yellow-300"} value="Domain">Domain</TabsTrigger>
-              <TabsTrigger className={"hover:text-yellow-300"} value="Hosting">Hosting</TabsTrigger>
+              <TabsTrigger className={"hover:text-yellow-300"} value="All">
+                All
+              </TabsTrigger>
+              <TabsTrigger className={"hover:text-yellow-300"} value="Domain">
+                Domain
+              </TabsTrigger>
+              <TabsTrigger className={"hover:text-yellow-300"} value="Hosting">
+                Hosting
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 

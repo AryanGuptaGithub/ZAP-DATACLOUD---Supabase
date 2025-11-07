@@ -1,4 +1,7 @@
-import React, { useMemo, useState } from "react";
+// Expense.jsx
+import React, { useMemo, useState, useEffect } from "react";
+import { listExpenses, createExpense, updateExpense, deleteExpense } from "@/lib/expenses";
+import { useLoading } from "@/components/LoadingProvider";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,32 +18,28 @@ import { toast } from "sonner";
 import { Search, Plus, Edit2, Trash2, Upload, Calendar } from "lucide-react";
 
 export default function ExpensePage() {
-  const [rows, setRows] = useState([
-    {
-      id: "e1",
-      customer: "John Doe",
-      amount: 1200,
-      date: "2025-08-20",
-      remark: "Invoice Uploaded",
-      uploaded: "INVOICE",
-    },
-    {
-      id: "e2",
-      customer: "Jane Smith",
-      amount: 850,
-      date: "2025-08-22",
-      remark: "Quotation Uploaded",
-      uploaded: "QUOTATION",
-    },
-    {
-      id: "e3",
-      customer: "Michael Lee",
-      amount: 200,
-      date: "2025-08-23",
-      remark: "Pending Upload",
-      uploaded: "-",
-    },
-  ]);
+ 
+
+  const [rows, setRows] = useState([]);
+  const { withLoader } = useLoading();
+
+  useEffect(() => {
+  const channel = supabase
+    .channel('rt-expenses')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
+      listExpenses().then(setRows); // your existing fetcher
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+}, []);
+
+
+
+  useEffect(() => {
+    withLoader(async () => setRows(await listExpenses()))
+      .catch(e => toast.error(e.message));
+  }, [withLoader]);
 
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -63,21 +62,30 @@ export default function ExpensePage() {
   );
 
   const onDelete = (id) => {
-    if (!confirm("Delete this expense record?")) return;
-    setRows((r) => r.filter((x) => x.id !== id));
-    toast.success("Expense deleted");
+   if (!confirm("Delete this expense record?")) return;
+    withLoader(async () => {
+      await deleteExpense(id);
+      setRows((r) => r.filter((x) => x.id !== id));
+      toast.success("Expense deleted");
+    }).catch(e => toast.error(e.message));
+
   };
 
-  const onSave = (payload) => {
+  const onSave = async (payload) => {
+    const toDb = (f) => ({
+      customer_name: f.customer,
+      amount: f.amount,
+      date: f.date,
+      remark: f.remark,
+      uploaded_path: f.uploaded || null,
+    });
     if (editing) {
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id === editing.id ? { ...payload, id: editing.id } : r
-        )
-      );
+      const updated = await withLoader(() => updateExpense(editing.id, toDb(payload)));
+      setRows(prev => prev.map(r => r.id === editing.id ? updated : r));
       toast.success("Expense updated");
     } else {
-      setRows((prev) => [{ ...payload, id: crypto.randomUUID() }, ...prev]);
+      const created = await withLoader(() => createExpense(toDb(payload)));
+      setRows(prev => [created, ...prev]);
       toast.success("Expense added");
     }
     setOpen(false);

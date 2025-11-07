@@ -1,29 +1,45 @@
-// src/router/Router.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import DashboardLayout from "../components/layout/DashboardLayout.jsx";
-import DashboardHome from "../pages/Dashboard/DashboardHome.jsx";
-import CustomersPage from "../pages/Customers.jsx";
-import CredentialsPage from "../pages/CredentialsPage.jsx";
-import IncomePage from "../pages/Income.jsx";      // create later
-import ExpensePage from "../pages/Expense.jsx";    // create later
+import RequireAuth from "./RequireAuth";
 
-const Router = () => {
+import DashboardLayout from "@/components/layout/DashboardLayout.jsx";
+import DashboardHome from "@/pages/Dashboard/DashboardHome.jsx";
+import CustomersPage from "@/pages/Customers.jsx";
+import CredentialsPage from "@/pages/CredentialsPage.jsx";
+import IncomePage from "@/pages/Income.jsx";
+import ExpensePage from "@/pages/Expense.jsx";
+
+import Login from "@/pages/Auth/Login.jsx";
+import Register from "@/pages/Auth/Register.jsx"; // create later, or point to your existing
+import ForgotPassword from "@/pages/Auth/ForgotPassword.jsx"; // optional
+
+export default function Router() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* All app pages live under the layout */}
-        <Route path="/" element={<DashboardLayout />}>
-          <Route index element={<DashboardHome />} />
-          <Route path="customers" element={<CustomersPage />} />
-          <Route path="credentials" element={<CredentialsPage />} />
-          <Route path="income" element={<IncomePage />} />
-          <Route path="expenses" element={<ExpensePage />} />
-          {/* Optional: redirect any unknown child route to dashboard */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
-};
+    <Routes>
+      {/* Public auth routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      {/* optional */}
+      <Route path="/forgotpassword" element={<ForgotPassword />} />
 
-export default Router;
+      {/* Protected app */}
+
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <DashboardLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<DashboardHome />} />
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="credentials" element={<CredentialsPage />} />
+        <Route path="income" element={<IncomePage />} />
+        <Route path="expenses" element={<ExpensePage />} />
+      </Route>
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}

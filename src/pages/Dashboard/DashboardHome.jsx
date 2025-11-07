@@ -162,13 +162,20 @@ export default function DashboardHome() {
               <Plus className="h-4 w-4" /> Add Client
             </Button>
           </Link>
-          <Link to="/projects" className="shrink-0 gap-2 bg-white/90  text-slate-900 hover:bg-indigo-700 hover:text-white rounded-md">
+          <Link
+            to="/projects"
+            className="shrink-0 gap-2 bg-white/90  text-slate-900 hover:bg-indigo-700 hover:text-white rounded-md"
+          >
             <Button variant="secondary" size="sm" className="gap-2">
               <Plus className="h-4 w-4" /> New Project
             </Button>
           </Link>
           <Link to="/credentials" className="shrink-0">
-            <Button variant="outline" size="sm" className="gap-2 bg-white/90  text-slate-900 hover:bg-indigo-700 hover:text-white">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 bg-white/90  text-slate-900 hover:bg-indigo-700 hover:text-white"
+            >
               <Plus className="h-4 w-4 " /> Add Credential
             </Button>
           </Link>
