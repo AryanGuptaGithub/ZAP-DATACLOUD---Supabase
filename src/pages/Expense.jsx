@@ -12,14 +12,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import {
-  Search,
-  Plus,
-  Edit2,
-  Trash2,
-  Upload,
-  Calendar,
-} from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Upload, Calendar } from "lucide-react";
 
 export default function ExpensePage() {
   const [rows, setRows] = useState([
@@ -78,7 +71,9 @@ export default function ExpensePage() {
   const onSave = (payload) => {
     if (editing) {
       setRows((prev) =>
-        prev.map((r) => (r.id === editing.id ? { ...payload, id: editing.id } : r))
+        prev.map((r) =>
+          r.id === editing.id ? { ...payload, id: editing.id } : r
+        )
       );
       toast.success("Expense updated");
     } else {
@@ -220,7 +215,10 @@ export default function ExpensePage() {
 
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="py-8 text-center text-muted-foreground"
+                    >
                       No expense records found.
                     </td>
                   </tr>
@@ -301,7 +299,12 @@ function ExpenseForm({ defaultValues, onCancel, onSave }) {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} className={'hover:bg-red-500'}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className={"hover:bg-red-500"}
+        >
           Cancel
         </Button>
         <Button type="submit" className={"bg-violet-700"}>
