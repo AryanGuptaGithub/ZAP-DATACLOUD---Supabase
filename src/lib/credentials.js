@@ -13,17 +13,68 @@ export async function listCredentials({ search = '', limit = 200 } = {}) {
   return data ?? [];
 }
 
+
+// ... other functions unchanged ...
+
+/**
+ * Create credential - ensures owner_id is set and type is normalized
+ */
 export async function createCredential(payload) {
-  const { data, error } = await supabase.from('credentials').insert([payload]).select().single();
+  // normalize enum-safe values for `type`
+  const typeMap = {
+    Domain: 'domain',
+    Hosting: 'hosting',
+    Email: 'email',
+    Other: 'other',
+  };
+
+  // get session user id
+  const { data: { session } = {} } = await supabase.auth.getSession();
+  const owner_id = session?.user?.id ?? null;
+
+  const normalized = {
+    ...payload,
+    type: typeMap[payload.type] ?? payload.type?.toLowerCase() ?? null,
+    owner_id, // attach owner (important when DB has NOT NULL)
+  };
+
+  const { data, error } = await supabase
+    .from('credentials')
+    .insert([normalized])
+    .select()
+    .single();
+
   if (error) throw error;
   return data;
 }
 
+/**
+ * Update credential - normalizes type if present and doesn't drop owner_id
+ */
 export async function updateCredential(id, patch) {
-  const { data, error } = await supabase.from('credentials').update(patch).eq('id', id).select().single();
+  const typeMap = {
+    Domain: 'domain',
+    Hosting: 'hosting',
+    Email: 'email',
+    Other: 'other',
+  };
+
+  const normalizedPatch = {
+    ...patch,
+    ...(patch.type && { type: typeMap[patch.type] ?? patch.type?.toLowerCase() }),
+  };
+
+  const { data, error } = await supabase
+    .from('credentials')
+    .update(normalizedPatch)
+    .eq('id', id)
+    .select()
+    .single();
+
   if (error) throw error;
   return data;
 }
+
 
 export async function deleteCredential(id) {
   const { error } = await supabase.from('credentials').delete().eq('id', id);
@@ -36,3 +87,5 @@ export async function listUpcomingRenewals() {
   if (error) throw error;
   return data ?? [];
 }
+
+

@@ -20,6 +20,7 @@ import { Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useLoading } from "@/components/LoadingProvider";
 import LoadingButton from "@/components/ui/LoadingButton";
+import { supabase } from "@/lib/supabaseClient";
 
 function ClientForm({ initial, onCancel, onSave }) {
   const [saving, setSaving] = useState(false);
@@ -246,7 +247,7 @@ export default function CustomersPage() {
                 "GST",
                 "Action",
               ].map((h) => (
-                <th key={h} className="px-3 py-2 border-b border-slate-200/20">
+                <th key={h} className="px-3 py-2 border-b border-slate-200/20 bg-amber-300 text-black">
                   {h}
                 </th>
               ))}
@@ -255,7 +256,7 @@ export default function CustomersPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-6 text-center text-green-400" colSpan={9}>
+                <td className="px-3 py-6 text-center text-green-400 " colSpan={9}>
                   Loading customers...
                 </td>
               </tr>
@@ -263,9 +264,9 @@ export default function CustomersPage() {
               filtered.map((r, i) => (
                 <tr
                   key={r.id}
-                  className="hover:bg-slate-50/40 dark:hover:bg-slate-800/40 text-white"
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 text-white border-b"
                 >
-                  <td className="px-3 py-2">{i + 1}</td>
+                  <td className="px-3 py-2 ">{i + 1}</td>
                   <td className="px-3 py-2">{r.clientName}</td>
                   <td className="px-3 py-2">{r.companyName}</td>
                   <td className="px-3 py-2">{r.clientDesignation}</td>

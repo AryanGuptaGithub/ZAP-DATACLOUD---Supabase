@@ -9,6 +9,7 @@ import {
   listUpcomingRenewals,
 } from "@/lib/credentials";
 import { useLoading } from "@/components/LoadingProvider";
+import { supabase } from "@/lib/supabaseClient";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -149,7 +150,8 @@ export default function CredentialsPage() {
 
   const toDb = (f) => ({
     client_name: f.client,
-    type: f.type,
+    // normalize enum to lowercase so DB enum matches (domain/hosting)
+    type: String(f.type ?? "").toLowerCase(),
     provider: f.provider,
     portal_url: f.url,
     login: f.login,
@@ -169,22 +171,30 @@ export default function CredentialsPage() {
     expiry: r.expiry,
     notes: r.notes || "",
   });
+
   const onSave = async (payload) => {
-    if (editing) {
-      const updated = await withLoader(() =>
-        updateCredential(editing.id, toDb(payload))
-      );
-      setRows((prev) =>
-        prev.map((r) => (r.id === editing.id ? fromDb(updated) : r))
-      );
-      toast.success("Credential updated");
-    } else {
-      const created = await withLoader(() => createCredential(toDb(payload)));
-      setRows((prev) => [fromDb(created), ...prev]);
-      toast.success("Credential added");
+    try {
+      if (editing) {
+        const updated = await withLoader(() =>
+          updateCredential(editing.id, toDb(payload))
+        );
+        setRows((prev) =>
+          prev.map((r) => (r.id === editing.id ? fromDb(updated) : r))
+        );
+        toast.success("Credential updated");
+      } else {
+        // create once via withLoader
+        const created = await withLoader(() => createCredential(toDb(payload)));
+        setRows((prev) => [fromDb(created), ...prev]);
+        toast.success("Credential added");
+      }
+      setOpen(false);
+      setEditing(null);
+    } catch (err) {
+      // show helpful error and keep dialog open so user can retry/fix
+      toast.error(err?.message ?? "Save failed");
+      console.error("onSave error:", err);
     }
-    setOpen(false);
-    setEditing(null);
   };
 
   return (
@@ -270,11 +280,11 @@ export default function CredentialsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-2 sm:px-4 pb-4">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[900px] border-collapse">
+          <div className="w-full overflow-x-auto rounded-3xl">
+            <table className="w-full min-w-[900px] border-collapse rounded-md p-4 ">
               <thead>
-                <tr className="text-left text-sm text-muted-foreground border-b">
-                  <th className="py-2 pr-3">Client</th>
+                <tr className=" text-sm text-muted-foreground bg-amber-400 text-black ">
+                  <th className="py-2 pr-3"><h3>Client</h3></th>
                   <th className="py-2 pr-3">Type</th>
                   <th className="py-2 pr-3">Provider</th>
                   <th className="py-2 pr-3">Service</th>
@@ -286,9 +296,9 @@ export default function CredentialsPage() {
               </thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="border-b hover:bg-muted/30">
+                  <tr key={r.id} className="border-b hover:bg-muted/30 text-center ">
                     <td className="py-2 pr-3">
-                      <div className="font-medium">{r.client}</div>
+                      <div className="font-medium ">{r.client}</div>
                       <div className="text-xs text-muted-foreground">
                         {r.notes || "\u00A0"}
                       </div>
@@ -300,14 +310,14 @@ export default function CredentialsPage() {
                           Domain
                         </Badge>
                       ) : (
-                        <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                        <Badge className="bg-purple-100 text-purple-700 border-purple-200 ">
                           <Server className="h-3 w-3 mr-1" />
                           Hosting
                         </Badge>
                       )}
                     </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex items-center gap-2">
+                    <td className="py-2 pr-3 ">
+                      <div className="flex items-center gap-2 text">
                         <span>{r.provider}</span>
                         {r.url && (
                           <Button
@@ -442,16 +452,33 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
     }
   );
 
+  const [submitting, setSubmitting] = React.useState(false);
+
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
+    // basic validation
     if (!form.client || !form.provider || !form.serviceName || !form.expiry)
-      return;
-    onSave(form);
+      return toast.error("Please fill required fields");
+
+    if (submitting) return; // guard against double submit
+    setSubmitting(true);
+
+    try {
+      // make sure type is normalized when sending (parent also normalizes)
+      const safePayload = { ...form, type: String(form.type ?? "domain") };
+      // await parent handler so we don't return before API finishes
+      await onSave(safePayload);
+    } catch (err) {
+      console.error("CredentialForm submit error:", err);
+      toast.error(err?.message ?? "Failed to save credential");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // small helper for inline feedback
+  // helper for inline feedback
   const daysLeft = React.useMemo(() => {
     if (!form.expiry) return null;
     const now = new Date();
@@ -459,7 +486,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
     return Math.ceil((d - now) / (1000 * 60 * 60 * 24));
   }, [form.expiry]);
 
-  // badge-like color for expiry hint
   const expiryHintClass =
     daysLeft == null
       ? "text-muted-foreground"
@@ -476,9 +502,9 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
       onSubmit={submit}
       className="space-y-5  bg-white/70 dark:bg-slate-900/60  backdrop-blur p-4 sm:p-6 text-white"
     >
-      {/* Two-column section */}
+      {/* ... keep same fields as before ... */}
+      {/* Client */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pb-4 border-b">
-        {/* Client */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             Client
@@ -640,8 +666,8 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
         >
           Cancel
         </Button>
-        <Button type="submit" className={"hover:bg-blue-500"}>
-          {defaultValues ? "Save Changes" : "Add Credential"}
+        <Button type="submit" className={"hover:bg-blue-500"} disabled={submitting}>
+          {submitting ? (defaultValues ? "Saving..." : "Adding...") : defaultValues ? "Save Changes" : "Add Credential"}
         </Button>
       </div>
     </form>

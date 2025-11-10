@@ -1,5 +1,5 @@
 // src/pages/Dashboard/Home.jsx
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlarmClock,
@@ -30,6 +30,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
+
+import { getDashboardStats } from "@/lib/dashboard";
+import { toast } from "sonner";
 
 /* ------------ helpers ------------ */
 const daysLeft = (dateStr) => {
@@ -64,68 +67,72 @@ const badgeFor = (d) => {
   );
 };
 
-/* ------------ mock data (replace later) ------------ */
-const stats = {
-  totalProjects: 31,
-  completed: 15,
-  pending: 16,
-  totalClients: 71,
-  totalVendors: 25,
-  totalIncome: 52516,
-  totalExpenses: 56479,
-  pendingIncome: 10117,
-  upcomingExpenses: 49818,
-};
-
-const expiringAssets = [
-  {
-    client: "ShopNow",
-    type: "Domain",
-    provider: "Namecheap",
-    expiry: "2025-11-29",
-  },
-  {
-    client: "Beta Ltd",
-    type: "Hosting",
-    provider: "AWS",
-    expiry: "2025-12-05",
-  },
-  {
-    client: "Acme Corp",
-    type: "Domain",
-    provider: "GoDaddy",
-    expiry: "2025-12-20",
-  },
-];
-
+/* ------------ placeholder charts data (keeps visuals) ------------ */
 const monthly = [
   { month: "June", Projects: 40, Completed: 28, Pending: 12 },
   { month: "July", Projects: 55, Completed: 42, Pending: 13 },
   { month: "August", Projects: 70, Completed: 50, Pending: 20 },
 ];
 
-const pieData = [
-  { name: "Completed", value: stats.completed },
-  { name: "Pending", value: stats.pending },
-  { name: "Total", value: stats.totalProjects },
-];
-
-const PIE = ["#16a34a", "#f59e0b", "#6366f1"];
-
-/* ------------ page ------------ */
 export default function DashboardHome() {
-  const expiringSoon = useMemo(
-    () =>
-      expiringAssets
-        .map((item) => ({ ...item, left: daysLeft(item.expiry) }))
-        .sort((a, b) => a.left - b.left),
-    []
-  );
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const minDays = expiringSoon.length
-    ? Math.min(...expiringSoon.map((i) => i.left))
-    : null;
-  const net = stats.totalIncome - stats.totalExpenses;
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getDashboardStats();
+        setStats(data);
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const expiringSoon = useMemo(() => {
+    if (!stats?.renewals?.length) return [];
+    return stats.renewals
+      .map((item) => ({ ...item, left: daysLeft(item.expiry) }))
+      .sort((a, b) => a.left - b.left);
+  }, [stats]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-4 lg:p-6
+                 bg-gradient-to-b from-indigo-50 via-white to-violet-50
+                 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 
+                 space-y-4 sm:space-y-6 text-white">
+        <div className="text-slate-700 dark:text-slate-200">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  // fallback to 0s if stats missing
+  const s = stats ?? {
+    totalProjects: 0,
+    completed: 0,
+    pending: 0,
+    totalClients: 0,
+    totalVendors: 0,
+    totalIncome: 0,
+    totalExpenses: 0,
+    pendingIncome: 0,
+    upcomingExpenses: 0,
+    renewals: [],
+  };
+
+  const minDays = expiringSoon.length ? Math.min(...expiringSoon.map((i) => i.left)) : null;
+  const net = (s.totalIncome || 0) - (s.totalExpenses || 0);
+
+  const pieData = [
+    { name: "Completed", value: s.completed || 0 },
+    { name: "Pending", value: s.pending || 0 },
+    { name: "Total", value: s.totalProjects || 0 },
+  ];
+  const PIE = ["#16a34a", "#f59e0b", "#6366f1"];
 
   return (
     <div
@@ -210,24 +217,24 @@ export default function DashboardHome() {
         <StatCard
           icon={<Briefcase />}
           label="Total Projects"
-          value={stats.totalProjects}
+          value={s.totalProjects}
         />
         <StatCard
           icon={<CheckCircle2 />}
           label="Completed"
-          value={stats.completed}
+          value={s.completed}
         />
-        <StatCard icon={<Clock3 />} label="Pending" value={stats.pending} />
-        <StatCard icon={<Users />} label="Clients" value={stats.totalClients} />
+        <StatCard icon={<Clock3 />} label="Pending" value={s.pending} />
+        <StatCard icon={<Users />} label="Clients" value={s.totalClients} />
         <StatCard
           icon={<Shield />}
           label="Vendors"
-          value={stats.totalVendors}
+          value={s.totalVendors}
         />
         <StatCard
           icon={<DollarSign />}
           label="Income (₹)"
-          value={stats.totalIncome.toLocaleString("en-IN")}
+          value={(s.totalIncome || 0).toLocaleString("en-IN")}
         />
       </div>
 
@@ -243,17 +250,17 @@ export default function DashboardHome() {
             <MiniKpi
               icon={<Wallet2 className="text-indigo-600" />}
               label="Total Expenses"
-              value={`₹${stats.totalExpenses.toLocaleString("en-IN")}`}
+              value={`₹${(s.totalExpenses || 0).toLocaleString("en-IN")}`}
             />
             <MiniKpi
               icon={<DollarSign className="text-emerald-600" />}
               label="Pending Income"
-              value={`₹${stats.pendingIncome.toLocaleString("en-IN")}`}
+              value={`₹${(s.pendingIncome || 0).toLocaleString("en-IN")}`}
             />
             <MiniKpi
               icon={<CalendarDays className="text-violet-600" />}
               label="Upcoming Expenses"
-              value={`₹${stats.upcomingExpenses.toLocaleString("en-IN")}`}
+              value={`₹${(s.upcomingExpenses || 0).toLocaleString("en-IN")}`}
             />
             <div className="rounded-lg p-3 border bg-white/60 dark:bg-slate-900/40">
               <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
@@ -284,10 +291,10 @@ export default function DashboardHome() {
               >
                 <div className="min-w-0">
                   <div className="font-medium text-slate-800 dark:text-slate-100 truncate">
-                    {item.client} · {item.type}
+                    {item.client_name ?? item.client} · {item.type}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {item.provider} • Expires{" "}
+                    {item.provider ?? ""} • Expires{" "}
                     {new Date(item.expiry).toLocaleDateString()}
                   </div>
                 </div>
@@ -311,7 +318,6 @@ export default function DashboardHome() {
               Statistics Overview (Last 3 Months)
             </CardTitle>
           </CardHeader>
-          {/* Mobile horizontal scroll to avoid squish */}
           <div className="px-1 sm:px-2">
             <div className="w-full overflow-x-auto">
               <div className="min-w-[460px]">
