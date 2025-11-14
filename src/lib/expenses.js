@@ -2,29 +2,29 @@
 import { supabase } from "@/lib/supabaseClient";
 
 /** listExpenses({ from, to, limit, owner_id }) */
-export async function listExpenses({ from, to, limit = 200, owner_id } = {}) {
-  let q = supabase.from("expenses").select("*").order("date", { ascending: false }).limit(limit);
-  if (from) q = q.gte("date", from);
-  if (to) q = q.lte("date", to);
-  if (owner_id) q = q.eq("owner_id", owner_id);
+export async function listExpenses() {
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*")
+    .order("date", { ascending: false });
 
-  const { data, error } = await q;
   if (error) throw error;
 
+  // Normalize keys here:
   return (data ?? []).map((r) => ({
-  id: r.id,
-  customer: r.customer_name ?? "",
-  amount: r.amount ?? 0,
-  date: r.date ?? "",
-  category: r.category ?? "",
-  remark: r.remark ?? "",
-  uploaded: r.uploaded_path ?? "",
-  client_id: r.client_id ?? null,
-  owner_id: r.owner_id ?? null,
-  __raw: r,
-}));
-
+    id: r.id,
+    customer: r.customer_name ?? "",  // rename here
+    amount: r.amount ?? 0,
+    date: r.date ?? "",
+    category: r.category ?? "",
+    remark: r.remark ?? "",
+    uploaded: r.uploaded_path ?? "",  // rename here
+    client_id: r.client_id ?? null,
+    owner_id: r.owner_id ?? null,
+    __raw: r,
+  }));
 }
+
 
 
 // normalize a DB row into the UI row shape

@@ -18,7 +18,7 @@ export default function DashboardLayout() {
       <aside
         className="
           hidden sm:flex fixed left-0 top-14 bottom-0 w-64 z-30
-          bg-white/70 dark:bg-slate-900/80 border-r border-slate-200/20 backdrop-blur
+          bg-white/70 dark:bg-slate-900/80 border-r border-slate-200/20 backdrop-blur 
           p-4
         "
       >

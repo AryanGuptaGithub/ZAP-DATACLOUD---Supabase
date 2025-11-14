@@ -23,8 +23,8 @@ export default function NavBar() {
       <div className="mx-auto max-w-7xl px-3 sm:px-6 h-14 flex items-center justify-between">
        
         <Link to="/" className="flex items-center gap-2">
-          <img
-            src="/images/zaplogo.svg"
+          <image
+            src="../../public/zaplogo.jpg"
             alt="DataCloud Logo"
             className="h-7 w-7"
           />

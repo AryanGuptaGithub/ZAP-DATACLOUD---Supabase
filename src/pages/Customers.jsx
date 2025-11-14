@@ -26,16 +26,19 @@ function ClientForm({ initial, onCancel, onSave }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-  const channel = supabase
-    .channel('rt-clients')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
-      listExpenses().then(setRows); // your existing fetcher
-    })
-    .subscribe();
+    const channel = supabase
+      .channel("rt-clients")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "expenses" },
+        () => {
+          listExpenses().then(setRows); // your existing fetcher
+        }
+      )
+      .subscribe();
 
-  return () => supabase.removeChannel(channel);
-}, []);
-
+    return () => supabase.removeChannel(channel);
+  }, []);
 
   const [form, setForm] = useState(
     initial || {
@@ -63,8 +66,10 @@ function ClientForm({ initial, onCancel, onSave }) {
   }
 
   return (
-
-    <form onSubmit={save} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-white ">
+    <form
+      onSubmit={save}
+      className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-900 dark:text-white p-4"
+    >
       {[
         ["clientName", "Client Name"],
         ["companyName", "Company Name"],
@@ -99,7 +104,6 @@ function ClientForm({ initial, onCancel, onSave }) {
         </LoadingButton>
       </div>
     </form>
-  
   );
 }
 
@@ -186,9 +190,9 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="space-y-4 text-white">
+    <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-5 bg-gradient-to-b text-slate-900 dark:text-white from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 text-white">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Customers</h1>
 
         <Dialog
@@ -222,7 +226,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Search */}
-      <div className="flex justify-end text-white">
+      <div className="flex justify-end">
         <Input
           placeholder="Search customers..."
           className="max-w-xs"
@@ -232,8 +236,8 @@ export default function CustomersPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200/20 bg-white/60 dark:bg-slate-900/60 text-white">
-        <table className="w-full text-sm text-white">
+      <div className="overflow-x-auto rounded-lg border border-slate-200/20 bg-white/60 dark:bg-slate-900/60">
+        <table className="w-full text-sm">
           <thead className="text-left bg-slate-50/60 dark:bg-slate-800/60">
             <tr>
               {[
@@ -247,7 +251,10 @@ export default function CustomersPage() {
                 "GST",
                 "Action",
               ].map((h) => (
-                <th key={h} className="px-3 py-2 border-b border-slate-200/20 bg-amber-300 text-black">
+                <th
+                  key={h}
+                  className="px-3 py-2 border-b border-slate-200/20 bg-amber-300 text-black"
+                >
                   {h}
                 </th>
               ))}
@@ -256,7 +263,10 @@ export default function CustomersPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-6 text-center text-green-400 " colSpan={9}>
+                <td
+                  className="px-3 py-6 text-center text-green-400 "
+                  colSpan={9}
+                >
                   Loading customers...
                 </td>
               </tr>
@@ -264,7 +274,7 @@ export default function CustomersPage() {
               filtered.map((r, i) => (
                 <tr
                   key={r.id}
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 text-white border-b"
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 border-b"
                 >
                   <td className="px-3 py-2 ">{i + 1}</td>
                   <td className="px-3 py-2">{r.clientName}</td>

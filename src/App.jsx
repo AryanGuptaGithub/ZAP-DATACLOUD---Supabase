@@ -12,7 +12,7 @@ export default function App() {
     <LoadingProvider >
       <Toaster richColors position="top-right"  />
       <NavBar />
-      <div className="pt-14 bg-slate-50 dark:bg-slate-900 min-h-screen">
+      <div className="pt-14 bg-slate-500 dark:bg-slate-900 min-h-screen">
         <Router />
       </div>
       </LoadingProvider>

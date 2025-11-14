@@ -1,6 +1,11 @@
 // src/pages/Income.jsx
 import React, { useState, useMemo, useEffect } from "react";
-import { listIncomes, createIncome, updateIncome, deleteIncome } from "@/lib/incomes";
+import {
+  listIncomes,
+  createIncome,
+  updateIncome,
+  deleteIncome,
+} from "@/lib/incomes";
 import { uploadInvoice } from "@/lib/storage";
 import { useLoading } from "@/components/LoadingProvider";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -68,7 +73,9 @@ export default function IncomePage() {
                 return;
               }
               if (eventType === "UPDATE") {
-                setRows((prev) => prev.map((r) => (r.id === n.id ? normalize(n) : r)));
+                setRows((prev) =>
+                  prev.map((r) => (r.id === n.id ? normalize(n) : r))
+                );
                 return;
               }
               if (eventType === "DELETE") {
@@ -93,7 +100,7 @@ export default function IncomePage() {
       // note: removeChannel returns a promise; ignoring result is fine here
       // we call supabase.removeChannel in cleanup
       // keep channel variable in closure for cleanup
-      (channel); // no-op to keep lint happy
+      channel; // no-op to keep lint happy
     }, 400);
 
     return () => {
@@ -185,21 +192,36 @@ export default function IncomePage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-5 bg-gradient-to-b text-white from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+    <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-5 bg-gradient-to-b text-slate-900 dark:text-white from-indigo-50 bg-amber-400 via-white to-violet-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
       {/* Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-[clamp(22px,2.5vw,32px)] font-bold">Income Records</h1>
-          <p className="text-sm text-muted-foreground">Track all received payments and advances</p>
+          <h1 className="text-[clamp(22px,2.5vw,32px)] font-bold">
+            Income Records
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Track all received payments and advances
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search customer / remark / file" className="pl-8 w-[260px] sm:w-[320px]" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input
+              placeholder="Search customer / remark / file"
+              className="pl-8 w-[260px] sm:w-[320px]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
 
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) setEditing(null);
+            }}
+          >
             <DialogTrigger asChild>
               <Button className="gap-2 bg-indigo-600 hover:bg-indigo-800 text-white">
                 <Plus className="h-4 w-4" /> Add Income
@@ -207,7 +229,9 @@ export default function IncomePage() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 border border-slate-700/40 shadow-xl rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">{editing ? "Edit Income" : "Add Income"}</DialogTitle>
+                <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {editing ? "Edit Income" : "Add Income"}
+                </DialogTitle>
               </DialogHeader>
 
               <IncomeForm
@@ -228,34 +252,38 @@ export default function IncomePage() {
         <Card className="rounded-xl border border-slate-200/70 bg-white/75 dark:bg-slate-900/60 backdrop-blur shadow-sm">
           <CardContent className="flex justify-between items-center py-3 px-4">
             <h2 className="font-semibold text-lg">Total Income</h2>
-            <Badge className="bg-green-600 text-white px-4 py-1 text-base">₹{totalIncome.toLocaleString()}</Badge>
+            <Badge className="bg-green-600 text-white px-4 py-1 text-base">
+              ₹{totalIncome.toLocaleString()}
+            </Badge>
           </CardContent>
         </Card>
       </div>
 
       {/* Table */}
-      <Card className="rounded-xl border border-slate-200/70 bg-white/75 dark:bg-slate-900/60 backdrop-blur shadow-sm text-white">
-        <CardHeader className="px-3 sm:px-4">
+      <Card className="rounded-xl border border-slate-200/70 bg-white/75 dark:bg-slate-900/60 backdrop-blur shadow-sm bg-white/60 dark:bg-slate-900/60">
+        <CardHeader className="px-3 sm:px-4 ">
           <CardTitle>Income List</CardTitle>
         </CardHeader>
         <CardContent className="px-2 sm:px-4 pb-4 ">
-          <div className="w-full overflow-x-auto">
+          <div className="w-full overflow-x-auto rounded-2xl text-center">
             <table className="w-full min-w-[850px] border-collapse">
               <thead>
-                <tr className="text-left text-sm text-muted-foreground border-b">
-                  <th className="py-2 pr-3">Customer</th>
-                  <th className="py-2 pr-3">Amount</th>
-                  <th className="py-2 pr-3">Date</th>
-                  <th className="py-2 pr-3">Remark</th>
-                  <th className="py-2 pr-3">Uploaded</th>
-                  <th className="py-2 pr-3">Actions</th>
+                <tr className="text-sm text-muted-foreground border-b">
+                  <th className="py-2 pr-3 bg-amber-300">Customer</th>
+                  <th className="py-2 pr-3 bg-amber-300 ">Amount</th>
+                  <th className="py-2 pr-3 bg-amber-300">Date</th>
+                  <th className="py-2 pr-3  bg-amber-300">Remark</th>
+                  <th className="py-2 pr-3 bg-amber-300">Uploaded</th>
+                  <th className="py-2 pr-3 bg-amber-300">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b hover:bg-muted/30">
                     <td className="py-2 pr-3 font-medium">{r.customer}</td>
-                    <td className="py-2 pr-3 text-green-600 font-semibold">₹{Number(r.amount).toLocaleString()}</td>
+                    <td className="py-2 pr-3 text-green-600 font-semibold">
+                      ₹{Number(r.amount).toLocaleString()}
+                    </td>
                     <td className="py-2 pr-3 flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       {r.date}
@@ -265,7 +293,12 @@ export default function IncomePage() {
                       <Upload className="h-4 w-4 text-muted-foreground" />
                       {/* if uploaded is a URL, render link; else show file name */}
                       {r.uploaded ? (
-                        <a href={r.uploaded} target="_blank" rel="noreferrer" className="underline">
+                        <a
+                          href={r.uploaded}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline"
+                        >
                           {r.uploaded.split("/").pop()}
                         </a>
                       ) : (
@@ -274,10 +307,23 @@ export default function IncomePage() {
                     </td>
                     <td className="py-2 pr-3">
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setEditing(r); setOpen(true); }}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditing(r);
+                            setOpen(true);
+                          }}
+                        >
                           <Edit2 className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" onClick={() => onDelete(r.id)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-rose-600"
+                          onClick={() => onDelete(r.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -286,7 +332,10 @@ export default function IncomePage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="py-8 text-center text-muted-foreground"
+                    >
                       No income records found.
                     </td>
                   </tr>
@@ -336,23 +385,44 @@ function IncomeForm({ defaultValues, onCancel, onSave }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5 rounded-xl text-white p-4">
+    <form
+      onSubmit={submit}
+      className="space-y-5 rounded-xl text-slate-900 dark:text-white p-4"
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pb-4 border-b">
         <div className="space-y-1.5">
           <Label>Customer Name</Label>
-          <Input value={form.customer} onChange={(e) => update("customer", e.target.value)} required />
+          <Input
+            value={form.customer}
+            onChange={(e) => update("customer", e.target.value)}
+            required
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Amount</Label>
-          <Input type="number" value={form.amount} onChange={(e) => update("amount", e.target.value)} required />
+          <Input
+            type="number"
+            value={form.amount}
+            onChange={(e) => update("amount", e.target.value)}
+            required
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Date</Label>
-          <Input type="date" value={form.date} onChange={(e) => update("date", e.target.value)} required />
+          <Input
+            type="date"
+            value={form.date}
+            onChange={(e) => update("date", e.target.value)}
+            required
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Remark</Label>
-          <Input value={form.remark} onChange={(e) => update("remark", e.target.value)} placeholder="Optional..." />
+          <Input
+            value={form.remark}
+            onChange={(e) => update("remark", e.target.value)}
+            placeholder="Optional..."
+          />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <Label>Upload Invoice (optional)</Label>
@@ -363,15 +433,25 @@ function IncomeForm({ defaultValues, onCancel, onSave }) {
             className="w-full"
           />
           {/* show existing filename if any */}
-          <div className="text-xs text-muted-foreground mt-1">{form.uploaded ? form.uploaded.split("/").pop() : ""}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {form.uploaded ? form.uploaded.split("/").pop() : ""}
+          </div>
         </div>
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} className={"hover:bg-red-500"}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className={"hover:bg-red-500"}
+        >
           Cancel
         </Button>
-        <Button type="submit" className={"bg-indigo-600 hover:bg-indigo-800 text-white"}>
+        <Button
+          type="submit"
+          className={"bg-indigo-600 hover:bg-indigo-800 text-white"}
+        >
           {defaultValues ? "Save Changes" : "Add Income"}
         </Button>
       </div>

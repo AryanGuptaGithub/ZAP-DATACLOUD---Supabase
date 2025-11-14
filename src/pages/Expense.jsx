@@ -95,16 +95,31 @@ export default function ExpensePage() {
     }).catch((e) => toast.error(e.message));
   };
 
+  // Helper function to normalize expense object shape
+  function normalizeExpense(expense) {
+    return {
+      id: expense.id,
+      owner_id: expense.owner_id,
+      customer: expense.customer_name || "",
+      amount: Number(expense.amount) || 0,
+      date: expense.date
+        ? new Date(expense.date).toISOString().slice(0, 10)
+        : "",
+      category: expense.category || "",
+      remark: expense.remark || "",
+      uploaded: expense.uploaded_path || "",
+      client_id: expense.client_id || null,
+    };
+  }
+
   const onSave = async (payload) => {
     try {
       await withLoader(async () => {
-        // get logged-in user id (if you want to set owner_id)
         const { data: { session } = {} } = await supabase.auth.getSession();
         const owner_id = session?.user?.id ?? null;
 
-        // build row exactly matching your expenses table columns
         const row = {
-          customer_name: payload.customer ?? payload.name ?? null,
+          customer_name: payload.customer ?? null,
           amount: Number(payload.amount) || 0,
           date: payload.date ?? null,
           category: payload.category ?? null,
@@ -114,7 +129,6 @@ export default function ExpensePage() {
           client_id: null,
         };
 
-        // insert via REST/client helper (or call your src/lib/expenses.createExpense)
         const { data, error } = await supabase
           .from("expenses")
           .insert([row])
@@ -122,8 +136,10 @@ export default function ExpensePage() {
           .single();
 
         if (error) throw error;
-        // update local state (example)
-        setRows((prev) => [data, ...prev]);
+
+        // normalize the new row before adding to state
+        // console.log("Inserted Expenses:", data);
+        setRows((prev) => [normalizeExpense(data), ...prev]);
         toast.success("Expense added");
       });
       setOpen(false);
@@ -134,7 +150,7 @@ export default function ExpensePage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-5 bg-gradient-to-b text-amber-50 from-rose-50 via-white to-pink-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
+    <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-5 bg-gradient-to-b text-slate-900 dark:text-white from-rose-50 via-white to-pink-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
       {/* Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -163,7 +179,7 @@ export default function ExpensePage() {
             }}
           >
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 bg-amber-300 hover:bg-amber-400">
                 <Plus className="h-4 w-4" /> Add Expense
               </Button>
             </DialogTrigger>
@@ -201,21 +217,21 @@ export default function ExpensePage() {
       </div>
 
       {/* Table */}
-      <Card className="rounded-xl border border-slate-200/70 bg-white/75 dark:bg-slate-900/60 backdrop-blur shadow-sm">
-        <CardHeader className="px-3 sm:px-4">
+      <Card className="rounded-xl border border-slate-200/70 bg-white/75 dark:bg-slate-900/60 backdrop-blur shadow-sm ">
+        <CardHeader className="">
           <CardTitle>Expense List</CardTitle>
         </CardHeader>
         <CardContent className="px-2 sm:px-4 pb-4">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[850px] border-collapse">
+          <div className="w-full overflow-x-auto rounded-lg text-center">
+            <table className="w-full min-w-[850px] border-collapse ">
               <thead>
-                <tr className="text-left text-sm text-muted-foreground border-b">
-                  <th className="py-2 pr-3">Customer</th>
-                  <th className="py-2 pr-3">Amount</th>
-                  <th className="py-2 pr-3">Date</th>
-                  <th className="py-2 pr-3">Remark</th>
-                  <th className="py-2 pr-3">Uploaded</th>
-                  <th className="py-2 pr-3">Actions</th>
+                <tr className=" text-muted-foreground">
+                  <th className="py-2 pr-3  bg-amber-300">Customer</th>
+                  <th className="py-2 pr-3  bg-amber-300">Amount</th>
+                  <th className="py-2 pr-3  bg-amber-300">Date</th>
+                  <th className="py-2 pr-3  bg-amber-300">Remark</th>
+                  <th className="py-2 pr-3  bg-amber-300">Uploaded</th>
+                  <th className="py-2 pr-3  bg-amber-300">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,8 +317,11 @@ function ExpenseForm({ defaultValues, onCancel, onSave }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5 rounded-xl text-white">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pb-4 border-b ">
+    <form
+      onSubmit={submit}
+      className="space-y-5 rounded-xl text-slate-900 dark:text-white p-4"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pb-4 border-b">
         <div className="space-y-1.5">
           <Label>Customer Name</Label>
           <Input

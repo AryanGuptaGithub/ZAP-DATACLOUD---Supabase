@@ -101,11 +101,15 @@ export default function DashboardHome() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-4 lg:p-6
+      <div
+        className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-4 lg:p-6
                  bg-gradient-to-b from-indigo-50 via-white to-violet-50
                  dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 
-                 space-y-4 sm:space-y-6 text-white">
-        <div className="text-slate-700 dark:text-slate-200">Loading dashboard...</div>
+                 space-y-4 sm:space-y-6 text-white"
+      >
+        <div className="text-slate-700 dark:text-slate-200">
+          Loading dashboard...
+        </div>
       </div>
     );
   }
@@ -124,7 +128,9 @@ export default function DashboardHome() {
     renewals: [],
   };
 
-  const minDays = expiringSoon.length ? Math.min(...expiringSoon.map((i) => i.left)) : null;
+  const minDays = expiringSoon.length
+    ? Math.min(...expiringSoon.map((i) => i.left))
+    : null;
   const net = (s.totalIncome || 0) - (s.totalExpenses || 0);
 
   const pieData = [
@@ -138,8 +144,8 @@ export default function DashboardHome() {
     <div
       className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-4 lg:p-6
                  bg-gradient-to-b from-indigo-50 via-white to-violet-50
-                 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 
-                 space-y-4 sm:space-y-6 text-white"
+                 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900
+                 space-y-4 sm:space-y-6 text-slate-900 dark:text-white"
     >
       {/* Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -205,7 +211,7 @@ export default function DashboardHome() {
             <span className="font-semibold">{minDays} days</span>.
           </div>
           <Link to="/credentials" className="shrink-0">
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className={"border"}>
               View Renewals
             </Button>
           </Link>
@@ -218,6 +224,7 @@ export default function DashboardHome() {
           icon={<Briefcase />}
           label="Total Projects"
           value={s.totalProjects}
+          
         />
         <StatCard
           icon={<CheckCircle2 />}
@@ -226,11 +233,7 @@ export default function DashboardHome() {
         />
         <StatCard icon={<Clock3 />} label="Pending" value={s.pending} />
         <StatCard icon={<Users />} label="Clients" value={s.totalClients} />
-        <StatCard
-          icon={<Shield />}
-          label="Vendors"
-          value={s.totalVendors}
-        />
+        <StatCard icon={<Shield />} label="Vendors" value={s.totalVendors} />
         <StatCard
           icon={<DollarSign />}
           label="Income (₹)"
@@ -239,14 +242,14 @@ export default function DashboardHome() {
       </div>
 
       {/* Finance + Renewals */}
-      <div className="mt-4 grid gap-3 sm:gap-4 md:grid-cols-2">
-        <Card className="rounded-xl border border-slate-200/70 bg-white/70 dark:bg-slate-900/60 backdrop-blur shadow-sm hover:shadow-md transition min-w-0">
+      <div className="mt-4 grid gap-3 sm:gap-4 md:grid-cols-2 ">
+        <Card className="rounded-xl border border-slate-200/70 bg-white/10 dark:bg-slate-900/60 backdrop-blur shadow-sm hover:shadow-md transition min-w-0">
           <CardHeader className="px-3 sm:px-4">
             <CardTitle className="text-slate-800 dark:text-slate-100">
               Finance Overview
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 sm:px-4 grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
+          <CardContent className="px-3 sm:px-4 grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4 ">
             <MiniKpi
               icon={<Wallet2 className="text-indigo-600" />}
               label="Total Expenses"
@@ -420,9 +423,9 @@ function StatCard({ icon, label, value }) {
 
 function MiniKpi({ icon, label, value }) {
   return (
-    <div className="rounded-lg p-3 border bg-white/60 dark:bg-slate-900/40 min-w-0">
+    <div className="rounded-lg p-3 border bg-white/10 dark:bg-slate-900/40 min-w-0">
       <div className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-2">
-        <span className="grid place-items-center h-5 w-5 rounded border bg-white/70 dark:bg-slate-800/60">
+        <span className="grid place-items-center h-5 w-5 rounded border bg-white/10 dark:bg-slate-800/60">
           {icon}
         </span>
         <span className="truncate">{label}</span>

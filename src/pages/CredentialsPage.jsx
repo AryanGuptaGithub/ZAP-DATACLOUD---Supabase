@@ -67,7 +67,7 @@ const badgeFor = (d) => {
       </Badge>
     );
   return (
-    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+    <Badge className="bg-emerald-100 text-emerald-700 border-amber-200">
       Due in {d}d
     </Badge>
   );
@@ -75,14 +75,13 @@ const badgeFor = (d) => {
 
 /* ---------------- page ---------------- */
 export default function CredentialsPage() {
-  // seed (replace with API later)
   const [rows, setRows] = useState([]);
   const [renewals, setRenewals] = useState([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("All");
-  const [showPwd, setShowPwd] = useState(null); // id that is showing password
-  const [editing, setEditing] = useState(null); // row being edited (or null)
-  const [open, setOpen] = useState(false); // dialog
+  const [showPwd, setShowPwd] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [open, setOpen] = useState(false);
   const { withLoader } = useLoading();
 
   useEffect(() => {
@@ -92,11 +91,11 @@ export default function CredentialsPage() {
         data.map((r) => ({
           id: r.id,
           client: r.client_name,
-          type: r.type, // "Domain" / "Hosting"
+          type: r.type.charAt(0).toUpperCase() + r.type.slice(1), // 'domain' → 'Domain'
           provider: r.provider,
           url: r.portal_url,
           login: r.login,
-          password: r.password ?? "", // (if you add this column later)
+          password: r.password ?? "",
           serviceName: r.service_name,
           expiry: r.expiry,
           notes: r.notes || "",
@@ -106,17 +105,34 @@ export default function CredentialsPage() {
     }).catch((e) => toast.error(e.message));
   }, [withLoader]);
 
+  // Fixed real-time listener: was listening to "expenses" table
   useEffect(() => {
-  const channel = supabase
-    .channel('rt-credentials')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
-      listExpenses().then(setRows); // your existing fetcher
-    })
-    .subscribe();
+    const channel = supabase
+      .channel("rt-credentials")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "credentials" },
+        () => {
+          listCredentials({}).then((data) => {
+            setRows(data.map((r) => ({
+              id: r.id,
+              client: r.client_name,
+              type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
+              provider: r.provider,
+              url: r.portal_url,
+              login: r.login,
+              password: r.password ?? "",
+              serviceName: r.service_name,
+              expiry: r.expiry,
+              notes: r.notes || "",
+            })));
+          });
+        }
+      )
+      .subscribe();
 
-  return () => supabase.removeChannel(channel);
-}, []);
-
+    return () => supabase.removeChannel(channel);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -148,21 +164,11 @@ export default function CredentialsPage() {
     toast.success("Credential deleted");
   };
 
-  const toDb = (f) => ({
-    client_name: f.client,
-    // normalize enum to lowercase so DB enum matches (domain/hosting)
-    type: String(f.type ?? "").toLowerCase(),
-    provider: f.provider,
-    portal_url: f.url,
-    login: f.login,
-    service_name: f.serviceName,
-    expiry: f.expiry,
-    notes: f.notes,
-  });
+  // Removed toDb() — normalization now happens only in credentials.js
   const fromDb = (r) => ({
     id: r.id,
     client: r.client_name,
-    type: r.type,
+    type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
     provider: r.provider,
     url: r.portal_url,
     login: r.login,
@@ -176,29 +182,27 @@ export default function CredentialsPage() {
     try {
       if (editing) {
         const updated = await withLoader(() =>
-          updateCredential(editing.id, toDb(payload))
+          updateCredential(editing.id, payload) // Direct payload
         );
         setRows((prev) =>
           prev.map((r) => (r.id === editing.id ? fromDb(updated) : r))
         );
         toast.success("Credential updated");
       } else {
-        // create once via withLoader
-        const created = await withLoader(() => createCredential(toDb(payload)));
+        const created = await withLoader(() => createCredential(payload));
         setRows((prev) => [fromDb(created), ...prev]);
         toast.success("Credential added");
       }
       setOpen(false);
       setEditing(null);
     } catch (err) {
-      // show helpful error and keep dialog open so user can retry/fix
       toast.error(err?.message ?? "Save failed");
       console.error("onSave error:", err);
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-5 bg-gradient-to-b from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 text-white">
+    <div className="min-h-[calc(100vh-56px)] rounded-2xl p-3 sm:p-5 bg-gradient-to-b text-slate-900 dark:text-white from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
       {/* Header */}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -247,7 +251,7 @@ export default function CredentialsPage() {
             }}
           >
             <DialogTrigger asChild>
-              <Button className="gap-2 bg-white/70  text-slate-900 hover:bg-blue-500 hover:text-white ">
+              <Button className="gap-2 bg-amber-300 text-slate-900 hover:bg-amber-500 hover:text-white">
                 <Plus className="h-4 w-4" />
                 Add Credential
               </Button>
@@ -281,10 +285,12 @@ export default function CredentialsPage() {
         </CardHeader>
         <CardContent className="px-2 sm:px-4 pb-4">
           <div className="w-full overflow-x-auto rounded-3xl">
-            <table className="w-full min-w-[900px] border-collapse rounded-md p-4 ">
+            <table className="w-full min-w-[900px] border-collapse rounded-md p-4">
               <thead>
-                <tr className=" text-sm text-muted-foreground bg-amber-400 text-black ">
-                  <th className="py-2 pr-3"><h3>Client</h3></th>
+                <tr className="text-sm text-muted-foreground bg-amber-400 text-black">
+                  <th className="py-2 pr-3">
+                    <h3>Client</h3>
+                  </th>
                   <th className="py-2 pr-3">Type</th>
                   <th className="py-2 pr-3">Provider</th>
                   <th className="py-2 pr-3">Service</th>
@@ -296,9 +302,12 @@ export default function CredentialsPage() {
               </thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="border-b hover:bg-muted/30 text-center ">
+                  <tr
+                    key={r.id}
+                    className="border-b hover:bg-muted/30 text-center"
+                  >
                     <td className="py-2 pr-3">
-                      <div className="font-medium ">{r.client}</div>
+                      <div className="font-medium">{r.client}</div>
                       <div className="text-xs text-muted-foreground">
                         {r.notes || "\u00A0"}
                       </div>
@@ -310,13 +319,13 @@ export default function CredentialsPage() {
                           Domain
                         </Badge>
                       ) : (
-                        <Badge className="bg-purple-100 text-purple-700 border-purple-200 ">
+                        <Badge className="bg-purple-100 text-purple-700 border-purple-200">
                           <Server className="h-3 w-3 mr-1" />
                           Hosting
                         </Badge>
                       )}
                     </td>
-                    <td className="py-2 pr-3 ">
+                    <td className="py-2 pr-3">
                       <div className="flex items-center gap-2 text">
                         <span>{r.provider}</span>
                         {r.url && (
@@ -458,18 +467,14 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    // basic validation
     if (!form.client || !form.provider || !form.serviceName || !form.expiry)
       return toast.error("Please fill required fields");
 
-    if (submitting) return; // guard against double submit
+    if (submitting) return;
     setSubmitting(true);
 
     try {
-      // make sure type is normalized when sending (parent also normalizes)
-      const safePayload = { ...form, type: String(form.type ?? "domain") };
-      // await parent handler so we don't return before API finishes
-      await onSave(safePayload);
+      await onSave(form); // Direct pass — no override
     } catch (err) {
       console.error("CredentialForm submit error:", err);
       toast.error(err?.message ?? "Failed to save credential");
@@ -478,7 +483,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
     }
   };
 
-  // helper for inline feedback
   const daysLeft = React.useMemo(() => {
     if (!form.expiry) return null;
     const now = new Date();
@@ -500,10 +504,8 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
   return (
     <form
       onSubmit={submit}
-      className="space-y-5  bg-white/70 dark:bg-slate-900/60  backdrop-blur p-4 sm:p-6 text-white"
+      className="space-y-5 bg-white/70 dark:bg-slate-900/60 backdrop-blur p-4 sm:p-6 text-slate-900 dark:text-white"
     >
-      {/* ... keep same fields as before ... */}
-      {/* Client */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pb-4 border-b">
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
@@ -518,7 +520,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
           />
         </div>
 
-        {/* Type segmented buttons */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             Type
@@ -549,7 +550,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
           </div>
         </div>
 
-        {/* Provider */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             Provider
@@ -563,7 +563,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
           />
         </div>
 
-        {/* Portal URL */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             Portal URL (optional)
@@ -576,7 +575,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
           />
         </div>
 
-        {/* Login */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             Login
@@ -589,7 +587,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
           />
         </div>
 
-        {/* Password */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             Password
@@ -602,7 +599,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
           />
         </div>
 
-        {/* Service Name */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             {form.type === "Domain" ? "Domain Name" : "Hosting Name"}
@@ -620,7 +616,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
           />
         </div>
 
-        {/* Expiry */}
         <div className="space-y-1.5">
           <Label className="text-sm text-slate-700 dark:text-slate-200">
             Expiry Date
@@ -642,7 +637,6 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
         </div>
       </div>
 
-      {/* Notes */}
       <div className="space-y-1.5 mb-2 border-b pb-4">
         <Label className="text-sm text-slate-700 dark:text-slate-200">
           Notes
@@ -656,18 +650,27 @@ function CredentialForm({ defaultValues, onCancel, onSave }) {
         />
       </div>
 
-      {/* Actions */}
       <div className="flex justify-end gap-2 pt-2">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
-          className={"hover:bg-red-500"}
+          className={"hover:bg-red-500 hover:text-white"}
         >
           Cancel
         </Button>
-        <Button type="submit" className={"hover:bg-blue-500"} disabled={submitting}>
-          {submitting ? (defaultValues ? "Saving..." : "Adding...") : defaultValues ? "Save Changes" : "Add Credential"}
+        <Button
+          type="submit"
+          className={"hover:bg-amber-400 active:bg-blue-500 bg-amber-300"}
+          disabled={submitting}
+        >
+          {submitting
+            ? defaultValues
+              ? "Saving..."
+              : "Adding..."
+            : defaultValues
+            ? "Save Changes"
+            : "Add Credential"}
         </Button>
       </div>
     </form>
