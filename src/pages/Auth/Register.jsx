@@ -79,7 +79,7 @@ export default function Register() {
       </div>
 
       {/* Register form */}
-      <div className="flex w-full md:w-1/2 items-center justify-center p-8 overflow-hidden bg-gray-50 dark:bg-gray-900">
+      <div className="flex w-full md:w-1/2 items-center justify-center p-8 overflow-hidden bg-gray-200 dark:bg-gray-900">
         <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-2">
             Register
@@ -179,7 +179,7 @@ export default function Register() {
             </Button>
           </form>
 
-          {/* Or divider */}
+          {/* Or divider
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-gray-300 dark:border-gray-700" />
@@ -192,7 +192,7 @@ export default function Register() {
           </div>
 
           {/* Google Sign-up */}
-          <Button
+          {/* <Button
             type="button"
             onClick={onGoogleRegister}
             disabled={loadingGoogle}
@@ -200,7 +200,9 @@ export default function Register() {
           >
             {loadingGoogle ? <Loader2 className="h-5 w-5 animate-spin" /> : <Globe className="h-5 w-5" />}
             Continue with Google
-          </Button>
+          </Button>  */}
+          
+
 
           {/* Footer */}
           <div className="flex flex-col sm:flex-row justify-between text-sm text-gray-500 dark:text-gray-400 mt-6">

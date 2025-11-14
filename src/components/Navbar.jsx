@@ -23,11 +23,11 @@ export default function NavBar() {
       <div className="mx-auto max-w-7xl px-3 sm:px-6 h-14 flex items-center justify-between">
        
         <Link to="/" className="flex items-center gap-2">
-          <image
+          {/* <image
             src="../../public/zaplogo.jpg"
             alt="DataCloud Logo"
             className="h-7 w-7"
-          />
+          /> */}
           <span className="font-semibold hidden sm:block">DataCloud</span>
         </Link>
 
@@ -117,14 +117,14 @@ export default function NavBar() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-amber-200">
           {user ? (
             <>
               <Button size="sm" variant="outline" onClick={() => navigate("/")}>
                 <LayoutDashboard className="h-4 w-4 mr-1" /> Dashboard
               </Button>
               <Button size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-1" /> Logout
+                <LogOut className="h-4 w-4 mr-1 " /> Logout
               </Button>
             </>
           ) : (
